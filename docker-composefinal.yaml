@@ -1,0 +1,59 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: litellm-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: litellm
+      POSTGRES_PASSWORD: litellm123
+      POSTGRES_DB: litellm
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+  
+  litellm:
+    image: ghcr.io/berriai/litellm:main-stable
+    container_name: litellm-proxy
+    restart: always
+    depends_on:
+      - postgres
+    ports:
+      - "4000:4000"
+
+    environment:
+      DATABASE_URL: postgresql://litellm:litellm123@postgres:5432/litellm
+
+      LITELLM_MASTER_KEY: sk-local-master-key
+
+      # IMPORTANT: tells LiteLLM to use DB mode
+      STORE_MODEL_IN_DB: "True"
+    volumes:
+      - ./litellm_config.yaml:/app/config.yaml  
+
+    command: ["--config", "/app/config.yaml", "--host", "0.0.0.0", "--port", "4000"]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    restart: always
+    depends_on:
+      - litellm
+    ports:
+      - "3000:8080"
+
+    environment:
+      OPENAI_API_BASE_URL: http://host.docker.internal:4000/v1
+      OPENAI_API_KEY: sk-local-master-key
+
+    volumes:
+      - openwebui_data:/app/backend/data
+
+volumes:
+  postgres_data:
+  openwebui_data:
+ 
