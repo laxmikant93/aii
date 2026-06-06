@@ -1,0 +1,9 @@
+model_list:
+
+  - model_name: qwen
+    litellm_params:
+      model: ollama/qwen3:0.6b
+      api_base: http://ollama:11434
+
+general_settings:
+  database_url: postgresql://litellm:litellm123@postgres:5432/litellm
